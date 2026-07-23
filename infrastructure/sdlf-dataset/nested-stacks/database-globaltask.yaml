@@ -1,0 +1,28 @@
+# st_global_test
+AWSTemplateFormatVersion: 2010-09-09
+Description: database-globaltask
+Parameters:
+  pTeamName:
+    AllowedPattern: "[a-z0-9]*"
+    Type: String
+Resources:
+  rGlueDBglobaltask:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: Database globaltask
+        LocationUri: !Sub s3://${pTeamName}/globaltask
+        Name: globaltask
+  rCICDPermissionsDB:
+    DependsOn:
+      - rGlueDBglobaltask
+    Type: AWS::LakeFormation::Permissions
+    Properties:
+      DataLakePrincipal:
+        DataLakePrincipalIdentifier: !Sub arn:aws:iam::${AWS::AccountId}:role/sdlf-${pTeamName}-cicdcodebuild
+      Permissions:
+        - ALL
+      Resource:
+        DatabaseResource:
+          CatalogId: !Ref AWS::AccountId

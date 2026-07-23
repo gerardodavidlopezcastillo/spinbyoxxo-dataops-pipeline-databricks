@@ -1,0 +1,14 @@
+# Iniciso 4 y 6 - Uso de OmegaConf desde YAML
+pipeline:
+  country: "GT" # Inciso 6
+  start_date: "20250101" # Inciso 4
+  end_date: "20251231" # Inciso 4
+
+business_rules:
+  units_conversion:
+    CS: 20 # CS: Caja, una caja tiene 20 unidades
+    ST: 1 # ST: Unidades sueltas, una unidad suelta equivale a 1 unidad.
+
+  delivery_types:
+    rutina: ["ZPRE", "ZVE1"] # entregas de rutina -> es_entrega_rutina
+    bonificacion: ["Z04", "Z05"] # entregas con bonificaciones -> es_entrega_bonificacion

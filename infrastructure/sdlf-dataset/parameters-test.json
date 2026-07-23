@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "pTeamName",
+        "ParameterValue": "de"
+    },
+    {
+        "ParameterKey": "pPipelineName",
+        "ParameterValue": "main"
+    },
+    {
+        "ParameterKey": "pDatasetName",
+        "ParameterValue": "tables"
+    }
+]

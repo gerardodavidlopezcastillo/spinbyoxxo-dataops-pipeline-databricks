@@ -1,0 +1,8 @@
+antlr4-python3-runtime==4.9.3
+omegaconf==2.3.0
+pip==25.3
+py4j==0.10.9.7
+pyspark==3.5.0
+PyYAML==6.0.3
+setuptools==80.9.0
+wheel==0.45.1

@@ -1,0 +1,33 @@
+# Stack principal que llama a los nested stacks
+AWSTemplateFormatVersion: 2010-09-09
+Description: Contains all the resources necessary for a single dataset globaltask
+Parameters:
+  pTeamName:
+    Description: Name of the team owning the pipeline (all lowercase, no symbols or spaces)
+    Type: String
+    AllowedPattern: "[a-z0-9]*"
+Resources:
+  ######## GLUE-ADMIN #########
+  rAdminStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./nested-stacks/tables-admin.yaml
+      Parameters:
+        pTeamName: !Ref pTeamName
+  rFileDBglobaltask:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - rAdminStack
+    Properties:
+      TemplateURL: ./nested-stacks/database-globaltask.yaml
+      Parameters:
+        pTeamName: !Ref pTeamName
+  rtablesglobaltask1:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - rFileDBglobaltask
+    Properties:
+      TemplateURL: ./nested-stacks/tables-globaltask-1.yaml
+      Parameters:
+        pTeamName: !Ref pTeamName
+        pCentralBucket: !Ref pTeamName

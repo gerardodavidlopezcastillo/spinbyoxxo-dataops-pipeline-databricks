@@ -1,0 +1,63 @@
+# Glue Table
+AWSTemplateFormatVersion: 2010-09-09
+Description: tables-globaltask-file-1
+Parameters:
+  pCentralBucket:
+    Type: String
+  pTeamName:
+    AllowedPattern: "[a-z0-9]*"
+    Type: String
+Resources:
+  rstUserSaleData:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: globaltask
+      TableInput:
+        Description: st_global_test in database globaltask
+        Name: st_global_test
+        Parameters:
+          serialization.null.format: ""
+        StorageDescriptor:
+          Columns:
+            - Name: desc_fuente
+              Type: string
+            - Name: desc_nombre_archivo
+              Type: string
+            - Name: dtm_fecha_carga
+              Type: timestamp
+            - Name: desc_pais
+              Type: string
+            - Name: id_transporte
+              Type: int
+            - Name: id_ruta
+              Type: int
+            - Name: cod_sku_material
+              Type: string
+            - Name: desc_unidad
+              Type: string
+            - Name: num_unidades
+              Type: int
+            - Name: cantidad
+              Type: double
+            - Name: cantidad_unidades_totales
+              Type: double
+            - Name: vlr_precio
+              Type: double
+            - Name: desc_tipo_entrega
+              Type: string
+            - Name: es_entrega_rutina
+              Type: int
+            - Name: es_entrega_bonificacion
+              Type: int
+            - Name: fecha_particion
+              Type: bigint
+          InputFormat: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+          Location: "s3://globaltask-datalake-silver/mobility/processed/st_global_test"
+          SerdeInfo:
+            Parameters:
+              serialization.format: "1"
+              field.delim: "|"
+              line.delim: "\n"
+            SerializationLibrary: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+          TableType: EXTERNAL_TABLE
