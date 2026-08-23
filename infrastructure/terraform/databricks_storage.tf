@@ -97,6 +97,7 @@ resource "databricks_external_location" "bronze" {
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Bronze"
   force_destroy   = true
+  force_update    = true
 }
 
 resource "databricks_external_location" "silver" {
@@ -106,6 +107,7 @@ resource "databricks_external_location" "silver" {
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Silver"
   force_destroy   = true
+  force_update    = true
 }
 
 resource "databricks_external_location" "gold" {
@@ -115,6 +117,7 @@ resource "databricks_external_location" "gold" {
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Gold"
   force_destroy   = true
+  force_update    = true
 }
 
 # Permisos para External Locations
