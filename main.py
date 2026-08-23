@@ -42,8 +42,9 @@ def run_pipeline(is_onpremise=False):
     config = OmegaConf.load(config_path)
 
     # 2. Simular el esquema de Databricks creando la base de datos local
-    spark.sql("CREATE DATABASE IF NOT EXISTS silver")
-    spark.sql("CREATE DATABASE IF NOT EXISTS gold")
+    if is_onpremise:
+        spark.sql("CREATE DATABASE IF NOT EXISTS silver")
+        spark.sql("CREATE DATABASE IF NOT EXISTS gold")
 
     # 3. Iterar sobre las capas dinámicamente (silver, gold)
     for layer in ["silver", "gold"]:
