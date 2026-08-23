@@ -12,6 +12,15 @@ La empresa "E-Cart" operaba todo su comercio electrónico sobre una base de dato
 **La Solución:**
 Diseñar un **Data Lakehouse**. Extraer la información desde PostgreSQL sin afectar su rendimiento y llevarla a la nube (AWS S3). Una vez allí, utilizar el poder de procesamiento distribuido de **Databricks (Apache Spark)** para limpiar, transformar y organizar los datos, preparándolos para ser consumidos por tableros estadísticos (Power BI, Tableau) de manera súper rápida e independiente de la aplicación principal.
 
+
+### 🚀 Extra Mile: De un concepto teórico a una plataforma funcional
+El reto pedía *diseñar e implementar conceptualmente* la solución. Sin embargo, para demostrar habilidades de ingeniería reales, **este repositorio contiene un pipeline 100% funcional**. 
+Como no se proveyeron datos de prueba, se desarrolló un simulador avanzado en Python (`bronze/generate_dummy_data.py`) utilizando la librería `Faker` para generar decenas de miles de registros sintéticos (con nombres latinos, correos y transacciones coherentes), permitiendo probar la ingesta y transformación en un entorno de Big Data realista.
+
+![Simulador de Datos Sintéticos](assets/dummy_data.png)
+*Script generador de datos transaccionales, creando perfiles de usuarios realistas para alimentar la capa Bronze y probar el rendimiento del pipeline.*
+
+
 ---
 
 ## 🏗️ 2. Arquitectura de la Solución (End-to-End)
@@ -159,7 +168,11 @@ erDiagram
 
     dim_users ||--o{ fct_sales : "1:N"
 ```
+
 *(La tabla `fct_sales` está particionada físicamente en el almacenamiento en la nube por `part_year` y `part_month` para acelerar drásticamente los reportes que buscan ventanas de tiempo específicas).*
+
+> **SCD Tipo 2 (Slowly Changing Dimensions):** Como se aprecia en la tabla `dim_users`, se implementó el campo `is_active` (booleano). Esto prepara el modelo de datos para retener el historial completo de cambios de un usuario (por ejemplo, si cambia de país). Cuando un dato cambia, el registro antiguo se marca como inactivo (`is_active = False`) y se inserta el nuevo como activo, permitiendo que las ventas históricas de `fct_sales` apunten siempre a la fotografía correcta del usuario en el momento de la compra.
+
 
 ---
 
