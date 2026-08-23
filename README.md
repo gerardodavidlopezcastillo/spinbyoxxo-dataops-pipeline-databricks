@@ -72,19 +72,25 @@ Este proyecto fue diseñado con la seguridad en primer plano, no como una idea d
 
 ### 🔐 Gestión de Accesos (AWS IAM Roles)
 
-La arquitectura sigue el principio de **menor privilegio**, aislando las responsabilidades en diferentes Roles de IAM administrados por Terraform:
+La arquitectura sigue el principio de **menor privilegio**, aislando las responsabilidades en diferentes Roles de IAM administrados por Terraform (todos prefijados con `spinbyoxxo-` para fácil identificación en tu consola de AWS):
 
-- **Cross-Account Role**: Permite al plano de control global de Databricks instanciar clústeres EC2 en la VPC de AWS de manera segura usando `External ID`.
-- **UC Metastore Access Role**: Rol exclusivo para que el Metastore de Unity Catalog pueda administrar sus metadatos internos en su bucket S3 dedicado.
-- **UC Storage Credentials Role**: Rol que cuenta con políticas `self-assuming` estrictas, utilizado por Databricks para leer y escribir directamente en los Data Lakes (Bronze, Silver, Gold).
+- **Cross-Account Role** (`spinbyoxxo-databricks-cross-account-role`): Permite al plano de control global de Databricks instanciar clústeres EC2 (las máquinas virtuales que ejecutan Spark) en tu VPC de AWS de manera segura usando `External ID`.
+- **UC Metastore Access Role** (`spinbyoxxo-uc-access`): Rol exclusivo para que el Metastore de Unity Catalog pueda administrar sus metadatos internos en su bucket S3 dedicado (`spinbyoxxo-databricks-metastore-...`).
+- **UC Storage Credentials Role** (`spinbyoxxo-uc-storage-role`): Rol crítico que cuenta con políticas `self-assuming` estrictas. Es utilizado por Databricks para leer y escribir los datos reales directamente en los Data Lakes (los buckets Bronze, Silver y Gold).
 
 <p align="center">
   <img src="assets/aws_iam_roles.png" alt="AWS IAM Roles" width="90%">
   <br>
-  <em>Políticas de IAM aprovisionadas desde código, garantizando la seguridad entre cuentas (Cross-Account).</em>
+  <em>Políticas de IAM aprovisionadas desde código, garantizando la seguridad entre cuentas (Cross-Account). Nota: En tu consola verás roles nativos de AWS (como AWSServiceRoleForRDS), pero los roles de esta arquitectura siempre inician con el prefijo del proyecto.</em>
 </p>
 
 3. **Formato Delta Lake:** Todas las tablas de las capas Silver y Gold se guardan nativamente en formato **Delta**. Esto permite a la empresa hacer "viajes en el tiempo" (recuperar datos borrados) y asegura que, si un proceso de transformación falla a la mitad, los datos no se corrompan (transacciones ACID).
+
+<p align="center">
+  <img src="assets/databricks_delta_history.png" alt="Delta Lake Time Travel y Versioning" width="90%">
+  <br>
+  <em>Demostración de las capacidades transaccionales de Delta Lake (<code>DESC HISTORY</code>), mostrando el registro de auditoría de quién y cómo se modificó la tabla.</em>
+</p>
 
 ### Almacenamiento Físico en AWS S3
 
@@ -138,17 +144,28 @@ El código de transformación no es un script gigante difícil de leer. Fue dise
 - **Los Notebooks Analíticos (`silver/*.ipynb`, `gold/*.ipynb`):** Cada tabla del negocio tiene su propio Notebook. Estos heredan de la clase maestra, por lo que su código es extremadamente limpio (solo declaran cómo se transforma el dato). Al ser Notebooks, los analistas de datos en la nube pueden abrirlos visualmente en Databricks y explorar las celdas sin tener que entender arquitecturas complejas de software.
 - **Configuración Dinámica (`conf/config.yaml`):** Una sola "consola de mandos" que enciende, apaga o redirige tablas completas con cambiar una sola palabra, sin tocar el código fuente de Python.
 
+<p align="center">
+  <img src="assets/config_yaml.png" alt="Archivo de Configuración config.yaml" width="60%">
+  <br>
+  <em>Un solo archivo YAML controla toda la orquestación: metadatos, esquemas (Silver/Gold), ubicaciones y modos de escritura.</em>
+</p>
+
 ---
 
 ## 🚀 5. Infraestructura como Código (Terraform)
 
 Crear recursos de manera manual en Amazon Web Services (AWS) dando clics es una mala práctica propensa a errores humanos. Este proyecto cuenta con la carpeta `infrastructure/terraform/`, donde toda la infraestructura está automatizada en código.
-
 Con un solo comando (`terraform apply`), la nube crea de forma idéntica y segura:
 - La red virtual (VPC, Subredes).
 - Los contenedores S3 de almacenamiento.
 - Los Permisos y Roles (IAM).
 - El Workspace de Databricks y Unity Catalog.
+
+<p align="center">
+  <img src="assets/terraform_execution.png" alt="Ejecución de Terraform" width="90%">
+  <br>
+  <em>Despliegue de los recursos ejecutando `terraform apply` desde la terminal integrada, mostrando la organización modular de los archivos `.tf`.</em>
+</p>
 
 > **Nota Técnica de Optimización:** En iteraciones previas se probaron tecnologías antiguas (AWS Redshift, AWS ECS Fargate, ECR Docker). Al migrar a Databricks, se depuraron y destruyeron todos esos recursos obsoletos, demostrando un enfoque **FinOps** (optimización de costos) para no dejar infraestructura fantasma consumiendo presupuesto.
 
