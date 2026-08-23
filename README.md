@@ -27,22 +27,22 @@ El flujo de datos implementado sigue el estándar de la industria conocido como 
 ```mermaid
 flowchart LR
     subgraph Origen
-        PG[(PostgreSQL\nProducción)]
+        PG[("PostgreSQL\nProducción")]
     end
 
     subgraph AWS Cloud
-        DMS[AWS DMS\n(Change Data Capture)]
-        S3_Bronze[(S3 Bronze\nRaw Data)]
-        S3_Silver[(S3 Silver\nCleansed)]
-        S3_Gold[(S3 Gold\nStar Schema)]
+        DMS["AWS DMS\n(Change Data Capture)"]
+        S3_Bronze[("S3 Bronze\nRaw Data")]
+        S3_Silver[("S3 Silver\nCleansed")]
+        S3_Gold[("S3 Gold\nStar Schema")]
         
         PG -- CDC --> DMS
         DMS -- CSV/JSON --> S3_Bronze
     end
 
     subgraph Databricks Lakehouse
-        UC[Unity Catalog\nMetastore]
-        Compute[Job Cluster\n(PySpark)]
+        UC["Unity Catalog\nMetastore"]
+        Compute["Job Cluster\n(PySpark)"]
         
         S3_Bronze -. External Loc .-> UC
         S3_Silver -. External Loc .-> UC
@@ -54,8 +54,8 @@ flowchart LR
     end
     
     subgraph Consumo
-        DB_SQL[Databricks SQL]
-        BI[Power BI / Tableau]
+        DB_SQL["Databricks SQL"]
+        BI["Power BI / Tableau"]
         S3_Gold --> DB_SQL
         DB_SQL --> BI
     end
