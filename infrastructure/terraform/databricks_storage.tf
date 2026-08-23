@@ -83,6 +83,10 @@ resource "databricks_storage_credential" "aws_s3" {
   }
   force_destroy = true
   depends_on = [time_sleep.wait_for_storage_iam]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # External Locations
