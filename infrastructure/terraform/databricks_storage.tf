@@ -92,3 +92,34 @@ resource "databricks_external_location" "gold" {
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Gold"
 }
+
+# Permisos para External Locations
+resource "databricks_grants" "bronze_external_location" {
+  provider = databricks.workspace
+  external_location = databricks_external_location.bronze.id
+
+  grant {
+    principal  = "gdlopezcastillo@gmail.com"
+    privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
+  }
+}
+
+resource "databricks_grants" "silver_external_location" {
+  provider = databricks.workspace
+  external_location = databricks_external_location.silver.id
+
+  grant {
+    principal  = "gdlopezcastillo@gmail.com"
+    privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
+  }
+}
+
+resource "databricks_grants" "gold_external_location" {
+  provider = databricks.workspace
+  external_location = databricks_external_location.gold.id
+
+  grant {
+    principal  = "gdlopezcastillo@gmail.com"
+    privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
+  }
+}
