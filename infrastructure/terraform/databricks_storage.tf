@@ -77,12 +77,11 @@ resource "time_sleep" "wait_for_storage_iam" {
 # Storage Credential en Databricks
 resource "databricks_storage_credential" "aws_s3" {
   provider = databricks.workspace
-  name     = "${var.prefix}-aws-s3-credential"
+  name     = "${var.prefix}-aws-s3-cred-v2"
   aws_iam_role {
     role_arn = aws_iam_role.uc_storage_role.arn
   }
-  force_update = true
-  comment = "Validacion Final"
+  force_destroy = true
   depends_on = [time_sleep.wait_for_storage_iam]
 }
 
@@ -93,6 +92,7 @@ resource "databricks_external_location" "bronze" {
   url             = "s3://${aws_s3_bucket.raw_data.id}"
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Bronze"
+  force_destroy   = true
 }
 
 resource "databricks_external_location" "silver" {
@@ -101,6 +101,7 @@ resource "databricks_external_location" "silver" {
   url             = "s3://${aws_s3_bucket.processed_data.id}"
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Silver"
+  force_destroy   = true
 }
 
 resource "databricks_external_location" "gold" {
@@ -109,6 +110,7 @@ resource "databricks_external_location" "gold" {
   url             = "s3://${aws_s3_bucket.gold_data.id}"
   credential_name = databricks_storage_credential.aws_s3.id
   comment         = "Ubicacion para datos Gold"
+  force_destroy   = true
 }
 
 # Permisos para External Locations
