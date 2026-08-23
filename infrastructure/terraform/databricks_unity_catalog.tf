@@ -77,7 +77,26 @@ resource "aws_iam_policy" "unity_metastore" {
 
 resource "aws_iam_role" "metastore_data_access" {
   name               = "${var.prefix}-uc-access"
-  assume_role_policy = data.aws_iam_policy_document.passrole_for_uc.json
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::414351767826:role/unity-catalog-prod-UCMasterRole-14S5ZJVKOTYTL",
+            "arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-access"
+          ]
+        }
+        Action = "sts:AssumeRole"
+        Condition = {
+          StringEquals = {
+            "sts:ExternalId" = var.databricks_account_id
+          }
+        }
+      }
+    ]
+  })
   managed_policy_arns = [aws_iam_policy.unity_metastore.arn]
   tags = {
     Name        = "${var.prefix}-uc-access"

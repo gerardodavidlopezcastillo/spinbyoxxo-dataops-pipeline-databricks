@@ -14,6 +14,7 @@ resource "databricks_schema" "bronze" {
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "bronze"
   comment      = "Datos crudos (Raw Data)"
+  storage_root = databricks_external_location.bronze.url
   properties = {
     layer = "bronze"
   }
@@ -25,6 +26,7 @@ resource "databricks_schema" "silver" {
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "silver"
   comment      = "Datos limpios y estandarizados (Processed Data)"
+  storage_root = databricks_external_location.silver.url
   properties = {
     layer = "silver"
   }
@@ -36,6 +38,7 @@ resource "databricks_schema" "gold" {
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "gold"
   comment      = "Modelado dimensional para analítica y reportes"
+  storage_root = databricks_external_location.gold.url
   properties = {
     layer = "gold"
   }
