@@ -221,3 +221,31 @@ Una vez completado el pipeline, la arquitectura permite de manera instantánea r
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
   </a>
 </div>
+
+---
+
+## 🎯 7. Defensa de Decisiones Técnicas (Respuestas al Caso de Negocio)
+
+Como parte de la sustentación técnica de esta arquitectura, a continuación se detallan las respuestas a los requerimientos de negocio planteados:
+
+### 1. Ingesta: ¿Batch o Streaming (CDC)? ¿Cómo mitigar el impacto en Producción?
+**Decisión:** Se implementa un enfoque de **Change Data Capture (CDC)** mediante **AWS DMS (Database Migration Service)**. 
+**Justificación:** Al ser una base de datos OLTP (PostgreSQL) crítica para la app móvil, realizar consultas masivas tipo `SELECT *` para extracciones Batch en horas pico degradaría el servicio. AWS DMS lee directamente de los *Write-Ahead Logs (WAL)* de PostgreSQL, extrayendo los cambios (Inserts/Updates/Deletes) en tiempo real con un impacto casi nulo en el rendimiento de la base de datos origen. Estos eventos aterrizan como archivos crudos inmutables en la capa **Bronze** (S3).
+
+### 2. ¿Cómo asegurar que los datos sensibles (PII) estén protegidos?
+**Decisión:** Enmascaramiento criptográfico y aislamiento de permisos.
+**Justificación:** Durante el salto de la capa Bronze a la capa Silver (ver `src/analytics_helpers.py`), los campos como el `email` de los usuarios pasan por una función Hash unidireccional (**SHA-256**). De esta forma, el dato original se destruye para los analistas, pero permite seguir trazando la identidad del usuario (ej. para saber cuántas compras hizo). Adicionalmente, el acceso a la capa Bronze queda estrictamente prohibido para analistas a través de **Unity Catalog**, permitiendo solo a roles de Ingeniería ver el dato crudo.
+
+### 3. Estrategia de particionamiento para tablas de hechos (Fact Tables)
+**Decisión:** Particionamiento físico por `part_year` y `part_month`.
+**Justificación:** El comercio electrónico genera un volumen masivo de transacciones. En la capa Gold, la tabla `fct_sales` está particionada por año y mes. Cuando un analista financiero ejecute reportes como *"Ventas totales en el último trimestre"*, el motor de Databricks SQL ignorará el 90% de los datos históricos irrelevantes (Partition Pruning), leyendo solo los meses necesarios. Esto ahorra tiempos de cómputo y costos drásticamente.
+
+### 4. Cambios de estado (ej. Pending a Completed): ¿Cómo se refleja en la arquitectura?
+**Decisión:** Operaciones `UPSERT` gracias a las propiedades ACID de Delta Lake.
+**Justificación:** En un Data Lake tradicional (solo Parquet), actualizar un registro es extremadamente ineficiente (requiere reescribir todo el archivo). Como usamos **Delta Lake** en las capas Silver y Gold, podemos utilizar la operación `MERGE INTO`. Cuando el CDC captura que una orden cambió a `Completed`, Spark ejecuta un *Upsert* sobre la tabla Delta: si el ID de la orden existe, actualiza el estado; si no existe, la inserta. Así, los dashboards siempre reflejan el estado real sin duplicar registros.
+
+### 5. ¿Qué framework de CI/CD implementarías y cómo manejarías IaC?
+**Decisión:** **GitHub Actions** orquestando **Terraform** y Databricks CLI.
+**Justificación:** 
+- **Integración Continua (CI):** Al hacer un Pull Request, GitHub Actions ejecutará tests unitarios (con `pytest` sobre `main.py --onpremise`) y correrá `terraform plan` para evaluar qué infraestructura va a cambiar, sin aplicarla aún.
+- **Despliegue Continuo (CD):** Al hacer merge a la rama `main`, un job ejecuta `terraform apply` (creando/modificando roles IAM, S3, o clústeres si fuera necesario) y posteriormente se notifica a Databricks Repos mediante una API para que sincronice el código fuente más reciente. Esto asegura que la infraestructura y el código evolucionen a la par.
