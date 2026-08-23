@@ -1,25 +1,27 @@
 # IAM Role for Unity Catalog External Locations
-data "databricks_aws_unity_catalog_assume_role_policy" "uc_storage_trust" {
-  aws_account_id = var.account_id
-  role_name      = "${var.prefix}-uc-storage-role"
-  external_id    = var.databricks_account_id
-}
-
-data "aws_iam_policy_document" "uc_storage_trust_self" {
-  source_policy_documents = [data.databricks_aws_unity_catalog_assume_role_policy.uc_storage_trust.json]
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-storage-role"]
-    }
-  }
-}
-
+# Usamos una politica de trust exacta que Databricks requiere (Un solo statement con ambos ARNs)
 resource "aws_iam_role" "uc_storage_role" {
   name               = "${var.prefix}-uc-storage-role"
-  assume_role_policy = data.aws_iam_policy_document.uc_storage_trust_self.json
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::414351767826:role/unity-catalog-prod-UCMasterRole-14S5ZJVKOTYTL",
+            "arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-storage-role"
+          ]
+        }
+        Action = "sts:AssumeRole"
+        Condition = {
+          StringEquals = {
+            "sts:ExternalId" = var.databricks_account_id
+          }
+        }
+      }
+    ]
+  })
 }
 
 resource "aws_iam_policy" "uc_storage_policy" {
@@ -77,7 +79,7 @@ resource "time_sleep" "wait_for_storage_iam" {
 # Storage Credential en Databricks
 resource "databricks_storage_credential" "aws_s3" {
   provider = databricks.workspace
-  name     = "${var.prefix}-aws-s3-cred-v2"
+  name     = "${var.prefix}-aws-s3-cred-v3"
   aws_iam_role {
     role_arn = aws_iam_role.uc_storage_role.arn
   }
