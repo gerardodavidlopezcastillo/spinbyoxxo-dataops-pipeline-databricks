@@ -3,6 +3,8 @@ Analytics Helpers - Funciones de apoyo para calculos analiticos y logica del neg
 """
 
 import logging
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
 
 # Obtenemos la configuracipon de Logging escrita en main
 logger = logging.getLogger(__name__)
@@ -25,6 +27,24 @@ class AnalyticsHelpers:
 
 
 class AnalyticsGobernanzaHelpers:
-
-    def gobernanza_validar_nit_boolean(self, df, *cols):
+    
+    @staticmethod
+    def gobernanza_validar_nit_boolean(df: DataFrame, *cols) -> DataFrame:
         return df
+
+    @staticmethod
+    def enmascarar_pii_sha256(df: DataFrame, columnas_pii: list) -> DataFrame:
+        """
+        Aplica un hash SHA-256 a columnas sensibles (ej. emails, teléfonos) 
+        para cumplir con normativas de seguridad (GDPR/Data Privacy).
+        """
+        df_masked = df
+        for col_name in columnas_pii:
+            if col_name in df_masked.columns:
+                df_masked = df_masked.withColumn(
+                    f"{col_name}_hash", 
+                    F.sha2(F.col(col_name).cast("string"), 256)
+                ).drop(col_name) # Eliminamos la columna original cruda
+                
+        logger.info(f"Enmascaramiento PII aplicado a las columnas: {columnas_pii}")
+        return df_masked

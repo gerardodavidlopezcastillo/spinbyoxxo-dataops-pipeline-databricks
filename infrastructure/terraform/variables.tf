@@ -21,64 +21,48 @@ variable "environment" {
 
 variable "prefix" {
   description = "Prefix for resource names"
-  default     = "globaltask"
+  default     = "spinbyoxxo"
 }
 
-variable "redshift_username" {
-  description = "Redshift master username"
-  default     = "adminuser"
-}
 
-variable "redshift_password" {
-}
 
 variable "raw_bucket" {
   description = "S3 bucket for raw data"
-  default     = "globaltask-datalake-bronze"
+  default     = "spinbyoxxo-datalake-bronze"
 }
 
 variable "processed_bucket" {
   description = "S3 bucket for processed data"
-  default     = "globaltask-datalake-silver"
+  default     = "spinbyoxxo-datalake-silver"
 }
 
 variable "athena_results_bucket" {
   description = "S3 bucket for Athena query results"
-  default     = "globaltask-athena-results"
+  default     = "spinbyoxxo-athena-results"
 }
 
-variable "ecs_cpu" {
-  description = "CPU units for ECS task"
-  default     = 512
+
+
+
+
+# Databricks Variables
+variable "databricks_account_id" {
+  description = "Databricks Account ID"
+  type        = string
 }
 
-variable "ecs_memory" {
-  description = "Memory (MB) for ECS task"
-  default     = 1024
+variable "databricks_client_id" {
+  description = "Databricks Account Client ID"
+  type        = string
 }
 
-variable "ecs_desired_count" {
-  description = "Number of ECS tasks to run"
-  default     = 0 # Dejar 0 tareas activas, ideal EventBridge
+variable "databricks_client_secret" {
+  description = "Databricks Account Client Secret"
+  type        = string
+  sensitive   = true
 }
 
-# variable "ecs_subnets" {
-#   description = "Subnets for ECS tasks"
-#   type        = list(string)
-#   default = [
-#     "subnet-00c52eee0b5226053", # cbc-vpc-subnet-private1-us-east-1a
-#     "subnet-0eaffef0f194c1de9"  # cbc-vpc-subnet-public1-us-east-1a
-#   ]
-# }
-
-# variable "ecs_subnets" {
-#   default = ["subnet-0eaffef0f194c1de9"] # pública
-# }
-
-# variable "ecs_security_groups" {
-#   description = "Security groups for ECS tasks"
-#   type        = list(string)
-#   default = [
-#     "sg-05f6903584b955e85" # default
-#   ]
-# }
+variable "gold_bucket" {
+  description = "S3 bucket for gold data"
+  default     = "spinbyoxxo-datalake-gold"
+}

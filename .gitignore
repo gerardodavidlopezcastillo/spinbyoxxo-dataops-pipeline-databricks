@@ -12,3 +12,11 @@ data/processed/
 
 # Docker / Logs
 *.log
+# Mac/OSX
+.DS_Store
+*.DS_Store
+
+# Local Spark Warehouse
+spark-warehouse/
+derby.log
+metastore_db/

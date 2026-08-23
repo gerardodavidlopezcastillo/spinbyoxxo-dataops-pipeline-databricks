@@ -1,72 +1,82 @@
+import ipynb.fs.full
+import importlib
+import os
 import sys
+import argparse
 import logging
 from omegaconf import OmegaConf
-from src.etl import ETLEngineer
+from pyspark.sql import SparkSession
 
-# Configuración de Logging Global
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def create_spark_session():
+    return SparkSession.builder \
+        .appName("ECart_Lakehouse_ETL") \
+        .config("spark.jars.packages", "io.delta:delta-spark_2.12:3.1.0") \
+        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+        .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+        .getOrCreate()
 
-def load_config() -> OmegaConf:
-    """
-    Carga la configuración en cascada:
-        1. Base (Reglas de Negocio)
-        2. Entorno (OnPremise vs Cloud)
-        3. CLI (Argumentos de terminal)
-    """
+def run_pipeline(is_onpremise=False):
+    spark = create_spark_session()
+    
+    # 1. Resolver rutas absolutas para Databricks
+    # En Databricks (spark_python_task), el código corre en un kernel de IPython donde __file__ no existe.
+    # Afortunadamente, Databricks Asset Bundles automáticamente ajusta el 'cwd' (current working directory)
+    # a la raíz del proyecto subido.
+    base_dir = os.getcwd()
+    sys.path.append(base_dir) # Para que importlib encuentre las carpetas silver y gold
+    
+    logger.info("Cargando config.yaml...")
+    config_path = os.path.join(base_dir, "conf/config.yaml")
+    config = OmegaConf.load(config_path)
 
-    try:
-        # Cargar parametros base indicados en prueba
-        base_conf = OmegaConf.load("conf/base/parameters.yaml")
+    # 2. Simular el esquema de Databricks creando la base de datos local
+    spark.sql("CREATE DATABASE IF NOT EXISTS silver")
+    spark.sql("CREATE DATABASE IF NOT EXISTS gold")
 
-        # Detectar Entorno (Default: onpremise), se pede cambiar ejecutando: python main.py pipeline.env=cloud
-        cli_conf = OmegaConf.from_cli()
-        env = cli_conf.get("pipeline", {}).get("env", "onpremise")
+    # 3. Iterar sobre las capas dinámicamente (silver, gold)
+    for layer in ["silver", "gold"]:
+        if layer in config.tables:
+            logger.info(f"========== PROCESANDO CAPA {layer.upper()} ==========")
+            
+            for table_key, table_config in config.tables[layer].items():
+                if table_config.active == 1:
+                    logger.info(f"--- Iniciando tabla: {table_key} ---")
+                    
+                    module_path = table_config.module_path
+                    module_name, class_name = module_path.rsplit(".", 1)
+                    notebook_module_path = f"ipynb.fs.full.{module_name}"
+                    module = importlib.import_module(notebook_module_path)
+                    TableClass = getattr(module, class_name)
+                    
+                    table_config_dict = OmegaConf.to_container(table_config, resolve=True)
+                    
+                    if is_onpremise:
+                        if "source_path" in table_config_dict:
+                            table_config_dict["source_path"] = table_config_dict["source_path"].replace("s3://spinbyoxxo-datalake-bronze", "bronze")
+                        
+                        if "catalog" in table_config_dict:
+                            table_config_dict["catalog"] = "spark_catalog"
+                            
+                        if "source_table" in table_config_dict:
+                            table_config_dict["source_table"] = table_config_dict["source_table"].replace("spinbyoxxo.", "")
+                            
+                        if "source_tables" in table_config_dict:
+                            for key in table_config_dict["source_tables"]:
+                                table_config_dict["source_tables"][key] = table_config_dict["source_tables"][key].replace("spinbyoxxo.", "")
+                    
+                    job = TableClass(spark, table_config_dict)
+                    job.execute()
+                else:
+                    logger.info(f"Tabla {table_key} inactiva. Saltando...")
 
-        logger.info(f"Inicializando configuración para entorno: {env.upper()}")
-
-        # Cargar Configuración de entorno OmegaConf
-        env_config_path = f"conf/{env}/env.yaml"
-        env_conf = OmegaConf.load(env_config_path)
-
-        # Fusionar (CLI manda sobre Entorno, Entorno manda sobre Base)
-        final_omegaconf = OmegaConf.merge(base_conf, env_conf, cli_conf)
-
-        # Validación visual de rutas (para debug)
-        logger.info(f"Input:  {final_omegaconf.pipeline.input_path}")
-        logger.info(f"Output: {final_omegaconf.pipeline.output_path}")
-
-        return final_omegaconf
-
-    except FileNotFoundError as e:
-        logger.error(f"Error de configuración: No se encontró el archivo {e.filename}")
-        logger.error(
-            f"Asegúrate de que existan: conf/base/parameters.yaml y conf/{env}/env.yaml"
-        )
-        sys.exit(1)
-
-    except Exception as e:
-        logger.error(f"Error inesperado cargando configuración: {str(e)}")
-        sys.exit(1)
-
-
-def main() -> None:
-    """Punto de entrada del pipeline ETL"""
-
-    logger.info("...Iniciando GlobalTask Data Pipeline...")
-
-    # Cargar configuración e Instanciar y ejecutar ETL
-    conf = load_config()
-    etl = ETLEngineer(conf)
-    etl.run()
-
-    logger.info("...Proceso finalizado correctamente...")
-
+    spark.stop()
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Ejecutar ETL Lakehouse")
+    parser.add_argument("--onpremise", action="store_true", help="Ejecutar localmente sobre escribiendo rutas de S3")
+    args = parser.parse_args()
+    
+    run_pipeline(is_onpremise=args.onpremise)

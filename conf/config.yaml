@@ -1,0 +1,60 @@
+tables:
+  silver:
+    st_users:
+      active: 1
+      source_type: "csv"
+      source_path: "s3://spinbyoxxo-datalake-bronze/raw_postgres_users.csv"
+      catalog: "spinbyoxxo"
+      schema: "silver"
+      table_name: "st_users"
+      write_mode: "overwrite"
+      module_path: "silver.st_users.StUsers"
+      owner: "gerardodavidlopezcastillo"
+
+    st_orders:
+      active: 1
+      source_type: "csv"
+      source_path: "s3://spinbyoxxo-datalake-bronze/raw_postgres_orders.csv"
+      catalog: "spinbyoxxo"
+      schema: "silver"
+      table_name: "st_orders"
+      write_mode: "overwrite"
+      module_path: "silver.st_orders.StOrders"
+      owner: "gerardodavidlopezcastillo"
+
+    st_order_items:
+      active: 1
+      source_type: "csv"
+      source_path: "s3://spinbyoxxo-datalake-bronze/raw_postgres_order_items.csv"
+      catalog: "spinbyoxxo"
+      schema: "silver"
+      table_name: "st_order_items"
+      write_mode: "overwrite"
+      module_path: "silver.st_order_items.StOrderItems"
+      owner: "gerardodavidlopezcastillo"
+
+  gold:
+    dim_users:
+      active: 1
+      source_type: "table"
+      source_table: "spinbyoxxo.silver.st_users"
+      catalog: "spinbyoxxo"
+      schema: "gold"
+      table_name: "dim_users"
+      write_mode: "overwrite"
+      module_path: "gold.dim_users.DimUsers"
+      owner: "gerardodavidlopezcastillo"
+    
+    fct_sales:
+      active: 1
+      source_type: "multiple_tables"
+      source_tables:
+        orders: "spinbyoxxo.silver.st_orders"
+        items: "spinbyoxxo.silver.st_order_items"
+      partition_columns: ["part_year", "part_month"]
+      catalog: "spinbyoxxo"
+      schema: "gold"
+      table_name: "fct_sales"
+      write_mode: "overwrite"
+      module_path: "gold.fct_sales.FctSales"
+      owner: "gerardodavidlopezcastillo"

@@ -2,7 +2,7 @@
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
-  enable_dns_support   = true # Requerido para Redshift
+  enable_dns_support   = true 
   enable_dns_hostnames = true # Requerido para asignación de DNS público
 
   tags = {
@@ -71,26 +71,17 @@ resource "aws_route_table_association" "public_2" {
   route_table_id = aws_route_table.public.id
 }
 
-# Security Group unificado para ECS y Redshift
+# Security Group general
 resource "aws_security_group" "main_sg" {
   name        = "${var.prefix}-sg"
-  description = "Allow inbound traffic for Redshift and ECS"
+  description = "Allow inbound HTTP traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "Allow HTTP for ECS"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Allow Redshift access"
-    from_port   = 5439
-    to_port     = 5439
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restringe esto a tu IP si quieres más seguridad
   }
 
   egress {

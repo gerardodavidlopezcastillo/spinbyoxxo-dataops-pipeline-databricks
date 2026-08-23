@@ -1,5 +1,5 @@
 """
-Constantes globales del proyecto GlobalTask Data Pipeline.
+Constantes spinbyoxxoes del proyecto spinbyoxxo Data Pipeline.
 Centraliza valores fijos/quemados (hardcoded) para evitar 'Magic Strings' (eliminar magic strings) y duplicacion de codigo en proyectos grandes corporativos
 las variales hardcoded siempre van en mayuscula para distinguirlas
 """
@@ -14,7 +14,7 @@ DEFAULT_STRING_VALUE = "PD"  # Por Definir
 DEFAULT_NUMERIC_VALUE = 0
 
 # Configuraciones spark
-SPARK_APP_NAME = "GlobalMobilityETL"
+SPARK_APP_NAME = "spinbyoxxoMobilityETL"
 SPARK_UI_PORT = "4050"
 
 ######### Se comenta ya que es una prueba tecnica, no un proyecto real corporativo, no sobre-ingenierizar la prueba
@@ -38,3 +38,19 @@ SPARK_UI_PORT = "4050"
 
 # Otros filtrod dummy etc
 # (Se pueden agregar aqui constantes de negocio futuras)
+
+
+"""
+Constantes spinbyoxxoes del proyecto spinbyoxxo Data Pipeline.
+"""
+# ... (mantén las constantes que ya tienes arriba) ...
+
+# Constantes para Databricks / Lakehouse
+FORMATO_DELTA = "delta"
+MODO_OVERWRITE = "overwrite"
+MODO_APPEND = "append"
+
+# Rutas base (se pueden inyectar luego por config u OmegaConf)
+BRONZE_BASE_PATH = "bronze/"
+SILVER_BASE_PATH = "silver/"
+GOLD_BASE_PATH = "gold/"
