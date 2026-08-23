@@ -145,14 +145,43 @@ La mayor ventaja de esta arquitectura es su **Modelo Dual**. Puedes probar tu c�
    ```
    **¿Qué hace la bandera `--onpremise`?** Intercepta la configuración, simula la existencia de Unity Catalog dentro de tu computadora creando la base de datos `spark-warehouse`, y lee los CSV locales en la carpeta `bronze/` en lugar de ir a buscarlos al S3 de AWS.
 
+<p align="center">
+  <img src="assets/local_execution.png" alt="Ejecución Local de PySpark" width="90%">
+  <br>
+  <em>Ejecución exitosa del pipeline de manera local mediante el flag --onpremise, simulando las escrituras en una base de datos local embebida.</em>
+</p>
+
 ### B) Ejecución en Databricks (Cloud Producción)
 
 1. En tu espacio de trabajo (Workspace) de Databricks, usa la función **Databricks Repos (Git Folders)** para conectar este repositorio de GitHub.
 2. Databricks clonará el proyecto idéntico a la nube.
+
+<p align="center">
+  <img src="assets/databricks_workspace.png" alt="Workspace Sincronizado con Git" width="90%">
+  <br>
+  <em>Workspace de Databricks sincronizado con el repositorio de GitHub de manera nativa para CI/CD continuo.</em>
+</p>
+
 3. Dirígete a la pestaña **Workflows -> Create Job**.
 4. Crea una tarea de tipo **Python Script** apuntando al archivo `main.py` de tu repositorio recién sincronizado.
 5. En la configuración del Clúster del Job, asegúrate de instalar las librerías `omegaconf` y `ipynb`.
 6. Presiona **Run Now**. Al no enviar la bandera `--onpremise`, el script utilizará los recursos empresariales: leerá los terabytes de datos en AWS S3 y guardará las tablas en Unity Catalog.
+
+<p align="center">
+  <img src="assets/databricks_job_run.png" alt="Ejecución de Workflows" width="90%">
+  <br>
+  <em>Ejecución 100% exitosa del pipeline completo orquestado mediante un Job Cluster automatizado.</em>
+</p>
+
+### 📊 Consumo de Datos (Databricks SQL)
+
+Una vez completado el pipeline, la arquitectura permite de manera instantánea realizar analítica de datos utilizando Databricks SQL Editor o conectándolo con herramientas de BI (PowerBI, Tableau, etc.).
+
+<p align="center">
+  <img src="assets/databricks_sql.png" alt="Databricks SQL Editor" width="90%">
+  <br>
+  <em>Consulta de las tablas de negocio finales de la capa Gold utilizando Databricks SQL Engine.</em>
+</p>
 
 ---
 <div align="center">
