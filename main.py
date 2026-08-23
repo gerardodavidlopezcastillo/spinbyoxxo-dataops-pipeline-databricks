@@ -1,3 +1,12 @@
+# Parche para Databricks: El kernel interno de IPython de Databricks omite __package__, lo que rompe la librería ipynb.
+try:
+    import IPython
+    ip = IPython.get_ipython()
+    if ip is not None and '__package__' not in ip.user_ns:
+        ip.user_ns['__package__'] = None
+except Exception:
+    pass
+
 import ipynb.fs.full
 import importlib
 import os
