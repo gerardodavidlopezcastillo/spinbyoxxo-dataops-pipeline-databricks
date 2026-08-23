@@ -48,9 +48,13 @@ resource "aws_iam_policy" "uc_storage_policy" {
         ]
       },
       {
-        Action   = "sts:AssumeRole"
-        Effect   = "Allow"
-        Resource = "arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-storage-role"
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-storage-role"
+        ]
       }
     ]
   })
