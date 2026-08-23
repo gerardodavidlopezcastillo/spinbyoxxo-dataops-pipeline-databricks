@@ -69,7 +69,32 @@ Este proyecto fue diseñado con la seguridad en primer plano, no como una idea d
 
 1. **Protección de Datos Personales (PII):** Durante la transformación en la capa Silver (`st_users`), los correos electrónicos de los usuarios son encriptados mediante un algoritmo criptográfico de una sola vía (**SHA-256**). Esto permite a los analistas saber que es un usuario único, pero no pueden ver su correo real.
 2. **Databricks Unity Catalog:** Actúa como el gran "gobernante" de los datos. Unity Catalog vincula las carpetas físicas de S3 con Databricks, permitiendo gestionar permisos a nivel de tablas, esquemas e incluso columnas.
+
+### 🔐 Gestión de Accesos (AWS IAM Roles)
+
+La arquitectura sigue el principio de **menor privilegio**, aislando las responsabilidades en diferentes Roles de IAM administrados por Terraform:
+
+- **Cross-Account Role**: Permite al plano de control global de Databricks instanciar clústeres EC2 en la VPC de AWS de manera segura usando `External ID`.
+- **UC Metastore Access Role**: Rol exclusivo para que el Metastore de Unity Catalog pueda administrar sus metadatos internos en su bucket S3 dedicado.
+- **UC Storage Credentials Role**: Rol que cuenta con políticas `self-assuming` estrictas, utilizado por Databricks para leer y escribir directamente en los Data Lakes (Bronze, Silver, Gold).
+
+<p align="center">
+  <img src="assets/aws_iam_roles.png" alt="AWS IAM Roles" width="90%">
+  <br>
+  <em>Políticas de IAM aprovisionadas desde código, garantizando la seguridad entre cuentas (Cross-Account).</em>
+</p>
+
 3. **Formato Delta Lake:** Todas las tablas de las capas Silver y Gold se guardan nativamente en formato **Delta**. Esto permite a la empresa hacer "viajes en el tiempo" (recuperar datos borrados) y asegura que, si un proceso de transformación falla a la mitad, los datos no se corrompan (transacciones ACID).
+
+### Almacenamiento Físico en AWS S3
+
+Aunque los analistas interactúan con tablas en Databricks, los datos reales residen de manera segura en tu propia cuenta de AWS. Unity Catalog abstrae la complejidad organizando los archivos transaccionales (`.parquet` y `_delta_log`) bajo identificadores únicos (UUIDs).
+
+<p align="center">
+  <img src="assets/aws_s3_unity_catalog.png" alt="Archivos Delta en AWS S3" width="90%">
+  <br>
+  <em>Almacenamiento nativo de las tablas Delta dentro del bucket S3 (Capa Silver), administrado y gobernado transparentemente por Unity Catalog.</em>
+</p>
 
 ### Diseño del Modelo de Datos (Capa Gold)
 
