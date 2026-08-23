@@ -1,4 +1,10 @@
-# 1. Root Bucket
+# ===============================================================================
+# Archivo: databricks_workspace.tf
+# Descripción: Orquesta la creación final del entorno de Databricks (Workspace)
+# uniendo la red, el rol cross-account y el almacenamiento interno.
+# ===============================================================================
+
+# Crea el bucket interno requerido por Databricks para guardar logs y artefactos del sistema
 resource "aws_s3_bucket" "root_storage_bucket" {
   bucket = "${var.prefix}-databricks-root-bucket-${var.account_id}"
 
@@ -33,7 +39,7 @@ resource "aws_s3_bucket_policy" "root_bucket_policy" {
   depends_on = [aws_s3_bucket_public_access_block.root_storage_bucket]
 }
 
-# 2. MWS Storage Configuration
+# Registra el bucket interno en la plataforma de Databricks
 resource "databricks_mws_storage_configurations" "this" {
   provider                   = databricks.mws
   account_id                 = var.databricks_account_id
@@ -41,7 +47,6 @@ resource "databricks_mws_storage_configurations" "this" {
   storage_configuration_name = "${var.prefix}-storage"
 }
 
-# 3. MWS Networks Configuration
 resource "databricks_mws_networks" "this" {
   provider           = databricks.mws
   account_id         = var.databricks_account_id
@@ -51,7 +56,7 @@ resource "databricks_mws_networks" "this" {
   vpc_id             = aws_vpc.main.id
 }
 
-# 4. MWS Workspace
+# Construye finalmente el Workspace integrando todos los recursos en AWS
 resource "databricks_mws_workspaces" "this" {
   provider                   = databricks.mws
   account_id                 = var.databricks_account_id
@@ -65,14 +70,12 @@ resource "databricks_mws_workspaces" "this" {
   }
 }
 
-# Alias de Databricks provider local para el workspace creado
 provider "databricks" {
   alias = "workspace"
   host  = databricks_mws_workspaces.this.workspace_url
   token = databricks_mws_workspaces.this.token[0].token_value
 }
 
-# 5. Asignar permisos de Administrador al usuario principal
 data "databricks_user" "me" {
   provider  = databricks.mws
   user_name = "gdlopezcastillo@gmail.com"

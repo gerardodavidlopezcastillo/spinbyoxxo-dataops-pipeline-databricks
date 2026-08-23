@@ -1,5 +1,9 @@
-# IAM Role for Unity Catalog External Locations
-# Usamos una politica de trust exacta que Databricks requiere (Un solo statement con ambos ARNs)
+# ===============================================================================
+# Archivo: databricks_storage.tf
+# Descripción: Configura las Credenciales de Almacenamiento y las Ubicaciones
+# Externas (External Locations) que permiten a Databricks leer/escribir en S3.
+# ===============================================================================
+
 resource "aws_iam_role" "uc_storage_role" {
   name               = "${var.prefix}-uc-storage-role"
   assume_role_policy = jsonencode({
@@ -76,7 +80,7 @@ resource "time_sleep" "wait_for_storage_iam" {
   }
 }
 
-# Storage Credential en Databricks
+# Registra el ARN del rol IAM que Databricks usará para conectarse a los buckets S3
 resource "databricks_storage_credential" "aws_s3" {
   provider = databricks.workspace
   name     = "${var.prefix}-aws-s3-cred-v3"
@@ -91,7 +95,7 @@ resource "databricks_storage_credential" "aws_s3" {
   }
 }
 
-# External Locations
+# Autoriza a Databricks para gestionar archivos específicamente en el bucket Bronze
 resource "databricks_external_location" "bronze" {
   provider        = databricks.workspace
   name            = "bronze_location"
@@ -102,6 +106,7 @@ resource "databricks_external_location" "bronze" {
   force_update    = true
 }
 
+# Autoriza a Databricks para gestionar archivos específicamente en el bucket Silver
 resource "databricks_external_location" "silver" {
   provider        = databricks.workspace
   name            = "silver_location"
@@ -112,6 +117,7 @@ resource "databricks_external_location" "silver" {
   force_update    = true
 }
 
+# Autoriza a Databricks para gestionar archivos específicamente en el bucket Gold
 resource "databricks_external_location" "gold" {
   provider        = databricks.workspace
   name            = "gold_location"
@@ -122,7 +128,6 @@ resource "databricks_external_location" "gold" {
   force_update    = true
 }
 
-# Permisos para External Locations
 resource "databricks_grants" "bronze_external_location" {
   provider = databricks.workspace
   external_location = databricks_external_location.bronze.id

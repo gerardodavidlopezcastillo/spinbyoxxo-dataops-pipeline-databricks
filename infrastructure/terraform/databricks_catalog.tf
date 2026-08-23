@@ -1,4 +1,11 @@
-# Catálogo de Unity Catalog
+# ===============================================================================
+# Archivo: databricks_catalog.tf
+# Descripción: Estructura lógica del Unity Catalog. Crea el catálogo raíz y
+# mapea los esquemas lógicos (bronze, silver, gold) hacia sus ubicaciones
+# físicas en AWS S3.
+# ===============================================================================
+
+# Crea el catálogo principal que agrupará todos nuestros esquemas
 resource "databricks_catalog" "spinbyoxxo" {
   provider       = databricks.workspace
   name           = "spinbyoxxo"
@@ -8,7 +15,7 @@ resource "databricks_catalog" "spinbyoxxo" {
   }
 }
 
-# Esquema Bronze
+# Define el esquema Bronze y lo vincula estrictamente a su External Location en S3
 resource "databricks_schema" "bronze" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
@@ -20,7 +27,7 @@ resource "databricks_schema" "bronze" {
   }
 }
 
-# Esquema Silver
+# Define el esquema Silver para las tablas Delta procesadas y limpias
 resource "databricks_schema" "silver" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
@@ -32,7 +39,7 @@ resource "databricks_schema" "silver" {
   }
 }
 
-# Esquema Gold
+# Define el esquema Gold para las tablas analíticas finales
 resource "databricks_schema" "gold" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
@@ -44,7 +51,7 @@ resource "databricks_schema" "gold" {
   }
 }
 
-# Asignar permisos al usuario actual sobre el catálogo
+# Otorga permisos de administración total al usuario propietario
 resource "databricks_grants" "spinbyoxxo_catalog" {
   provider = databricks.workspace
   catalog  = databricks_catalog.spinbyoxxo.name

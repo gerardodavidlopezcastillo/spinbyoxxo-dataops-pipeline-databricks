@@ -1,3 +1,9 @@
+# ===============================================================================
+# Archivo: provider.tf
+# Descripción: Configura los proveedores oficiales que Terraform utilizará para
+# comunicarse con las APIs de AWS y Databricks.
+# ===============================================================================
+
 terraform {
   required_providers {
     aws = {
@@ -11,11 +17,13 @@ terraform {
   }
 }
 
+# Proveedor de AWS: Autentica con la cuenta usando el perfil local y fija la región
 provider "aws" {
   region  = var.region
   profile = "gdlopezcastillo-cbc"
 }
 
+# Proveedor de Databricks (Nivel Cuenta): Usado para crear Workspaces y Unity Catalog
 provider "databricks" {
   alias      = "mws"
   host       = "https://accounts.cloud.databricks.com"

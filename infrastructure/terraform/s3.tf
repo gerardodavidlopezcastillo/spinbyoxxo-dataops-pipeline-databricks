@@ -1,4 +1,10 @@
-# Se crea un bucket especifico en S3
+# ===============================================================================
+# Archivo: s3.tf
+# Descripción: Provisiona los buckets físicos de Amazon S3 que actuarán como
+# las capas de almacenamiento del Data Lake (Medallion Architecture).
+# ===============================================================================
+
+# Capa Bronze: Almacena los datos crudos extraídos directamente por CDC
 resource "aws_s3_bucket" "raw_data" {
   bucket = var.raw_bucket
   force_destroy = true
@@ -9,6 +15,7 @@ resource "aws_s3_bucket" "raw_data" {
   }
 }
 
+# Capa Silver: Almacena los datos filtrados, tipificados y con PII enmascarada
 resource "aws_s3_bucket" "processed_data" {
   bucket = var.processed_bucket
 
@@ -27,6 +34,7 @@ resource "aws_s3_bucket" "athena_results" {
   }
 }
 
+# Capa Gold: Almacena los modelos dimensionales orientados a negocio (Star Schema)
 resource "aws_s3_bucket" "gold_data" {
   bucket = var.gold_bucket
 

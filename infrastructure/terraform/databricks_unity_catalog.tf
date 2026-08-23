@@ -1,4 +1,11 @@
-# S3 Bucket para Unity Catalog Metastore
+# ===============================================================================
+# Archivo: databricks_unity_catalog.tf
+# Descripción: Despliega los cimientos del gobierno de datos (Unity Catalog).
+# Crea el bucket exclusivo del Metastore, sus roles IAM asociados y activa el
+# servicio en el Workspace.
+# ===============================================================================
+
+# Crea el bucket root de S3 donde el Metastore guardará metadatos internos (no datos de negocio)
 resource "aws_s3_bucket" "metastore" {
   bucket = "${var.prefix}-databricks-metastore-${var.account_id}"
 
@@ -23,7 +30,6 @@ resource "aws_s3_bucket_versioning" "metastore" {
   }
 }
 
-# IAM Role for Unity Catalog
 data "aws_iam_policy_document" "passrole_for_uc" {
   statement {
     effect  = "Allow"
@@ -75,6 +81,7 @@ resource "aws_iam_policy" "unity_metastore" {
   })
 }
 
+# Crea el rol exclusivo del Metastore. IMPORTANTE: Contiene configuración "self-assuming"
 resource "aws_iam_role" "metastore_data_access" {
   name               = "${var.prefix}-uc-access"
   assume_role_policy = jsonencode({
@@ -104,7 +111,7 @@ resource "aws_iam_role" "metastore_data_access" {
   }
 }
 
-# Configuración del Metastore en Databricks Account
+# Instancia el Metastore de Unity Catalog en la región especificada
 resource "databricks_metastore" "this" {
   provider      = databricks.mws
   name          = "${var.prefix}-metastore"
@@ -123,6 +130,7 @@ resource "databricks_metastore_data_access" "this" {
   is_default = true
 }
 
+# Asigna el Metastore recién creado al Workspace de Databricks
 resource "databricks_metastore_assignment" "this" {
   provider             = databricks.workspace
   workspace_id         = databricks_mws_workspaces.this.workspace_id

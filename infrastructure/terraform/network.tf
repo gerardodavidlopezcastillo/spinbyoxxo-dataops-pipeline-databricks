@@ -1,5 +1,10 @@
-# network.tf
+# ===============================================================================
+# Archivo: network.tf
+# Descripción: Provisiona toda la topología de red en AWS. Crea una VPC aislada,
+# subredes públicas/privadas, y configura las tablas de ruteo para salida a internet.
+# ===============================================================================
 
+# Crea la Nube Virtual Privada (VPC) con soporte DNS habilitado
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true 
@@ -11,6 +16,7 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Puerta de enlace que permite la conexión de la VPC hacia internet
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -20,7 +26,6 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-# Subred Pública 1 (us-east-1a)
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -33,7 +38,6 @@ resource "aws_subnet" "public_1" {
   }
 }
 
-# Subred Pública 2 (us-east-1b)
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
@@ -46,7 +50,6 @@ resource "aws_subnet" "public_2" {
   }
 }
 
-# Tabla de enrutamiento para dar salida a internet
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -71,7 +74,6 @@ resource "aws_route_table_association" "public_2" {
   route_table_id = aws_route_table.public.id
 }
 
-# Security Group general
 resource "aws_security_group" "main_sg" {
   name        = "${var.prefix}-sg"
   description = "Allow inbound HTTP traffic"
