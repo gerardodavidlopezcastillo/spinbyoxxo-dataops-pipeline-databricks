@@ -5,9 +5,21 @@ data "databricks_aws_unity_catalog_assume_role_policy" "uc_storage_trust" {
   external_id    = var.databricks_account_id
 }
 
+data "aws_iam_policy_document" "uc_storage_trust_self" {
+  source_policy_documents = [data.databricks_aws_unity_catalog_assume_role_policy.uc_storage_trust.json]
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.account_id}:role/${var.prefix}-uc-storage-role"]
+    }
+  }
+}
+
 resource "aws_iam_role" "uc_storage_role" {
   name               = "${var.prefix}-uc-storage-role"
-  assume_role_policy = data.databricks_aws_unity_catalog_assume_role_policy.uc_storage_trust.json
+  assume_role_policy = data.aws_iam_policy_document.uc_storage_trust_self.json
 }
 
 resource "aws_iam_policy" "uc_storage_policy" {
