@@ -82,7 +82,7 @@ resource "databricks_storage_credential" "aws_s3" {
     role_arn = aws_iam_role.uc_storage_role.arn
   }
   force_update = true
-  comment = "Forzando validacion de IAM Role"
+  comment = "Validacion Final"
   depends_on = [time_sleep.wait_for_storage_iam]
 }
 
