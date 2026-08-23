@@ -78,29 +78,20 @@ La arquitectura sigue el principio de **menor privilegio**, aislando las respons
 - **UC Metastore Access Role** (`spinbyoxxo-uc-access`): Rol exclusivo para que el Metastore de Unity Catalog pueda administrar sus metadatos internos en su bucket S3 dedicado (`spinbyoxxo-databricks-metastore-...`).
 - **UC Storage Credentials Role** (`spinbyoxxo-uc-storage-role`): Rol crítico que cuenta con políticas `self-assuming` estrictas. Es utilizado por Databricks para leer y escribir los datos reales directamente en los Data Lakes (los buckets Bronze, Silver y Gold).
 
-<p align="center">
-  <img src="assets/aws_iam_roles.png" alt="AWS IAM Roles" width="90%">
-  <br>
-  <em>Políticas de IAM aprovisionadas desde código, garantizando la seguridad entre cuentas (Cross-Account). Nota: En tu consola verás roles nativos de AWS (como AWSServiceRoleForRDS), pero los roles de esta arquitectura siempre inician con el prefijo del proyecto.</em>
-</p>
+![AWS IAM Roles](assets/aws_iam_roles.png)
+*Políticas de IAM aprovisionadas desde código, garantizando la seguridad entre cuentas (Cross-Account). Nota: En tu consola verás roles nativos de AWS (como AWSServiceRoleForRDS), pero los roles de esta arquitectura siempre inician con el prefijo del proyecto.*
 
 3. **Formato Delta Lake:** Todas las tablas de las capas Silver y Gold se guardan nativamente en formato **Delta**. Esto permite a la empresa hacer "viajes en el tiempo" (recuperar datos borrados) y asegura que, si un proceso de transformación falla a la mitad, los datos no se corrompan (transacciones ACID).
 
-<p align="center">
-  <img src="assets/databricks_delta_history.png" alt="Delta Lake Time Travel y Versioning" width="90%">
-  <br>
-  <em>Demostración de las capacidades transaccionales de Delta Lake (<code>DESC HISTORY</code>), mostrando el registro de auditoría de quién y cómo se modificó la tabla.</em>
-</p>
+![Delta Lake Time Travel y Versioning](assets/databricks_delta_history.png)
+*Demostración de las capacidades transaccionales de Delta Lake (<code>DESC HISTORY</code>), mostrando el registro de auditoría de quién y cómo se modificó la tabla.*
 
 ### Almacenamiento Físico en AWS S3
 
 Aunque los analistas interactúan con tablas en Databricks, los datos reales residen de manera segura en tu propia cuenta de AWS. Unity Catalog abstrae la complejidad organizando los archivos transaccionales (`.parquet` y `_delta_log`) bajo identificadores únicos (UUIDs).
 
-<p align="center">
-  <img src="assets/aws_s3_unity_catalog.png" alt="Archivos Delta en AWS S3" width="90%">
-  <br>
-  <em>Almacenamiento nativo de las tablas Delta dentro del bucket S3 (Capa Silver), administrado y gobernado transparentemente por Unity Catalog.</em>
-</p>
+![Archivos Delta en AWS S3](assets/aws_s3_unity_catalog.png)
+*Almacenamiento nativo de las tablas Delta dentro del bucket S3 (Capa Silver), administrado y gobernado transparentemente por Unity Catalog.*
 
 ### Diseño del Modelo de Datos (Capa Gold)
 
@@ -144,11 +135,8 @@ El código de transformación no es un script gigante difícil de leer. Fue dise
 - **Los Notebooks Analíticos (`silver/*.ipynb`, `gold/*.ipynb`):** Cada tabla del negocio tiene su propio Notebook. Estos heredan de la clase maestra, por lo que su código es extremadamente limpio (solo declaran cómo se transforma el dato). Al ser Notebooks, los analistas de datos en la nube pueden abrirlos visualmente en Databricks y explorar las celdas sin tener que entender arquitecturas complejas de software.
 - **Configuración Dinámica (`conf/config.yaml`):** Una sola "consola de mandos" que enciende, apaga o redirige tablas completas con cambiar una sola palabra, sin tocar el código fuente de Python.
 
-<p align="center">
-  <img src="assets/config_yaml.png" alt="Archivo de Configuración config.yaml" width="60%">
-  <br>
-  <em>Un solo archivo YAML controla toda la orquestación: metadatos, esquemas (Silver/Gold), ubicaciones y modos de escritura.</em>
-</p>
+![Archivo de Configuración config.yaml](assets/config_yaml.png)
+*Un solo archivo YAML controla toda la orquestación: metadatos, esquemas (Silver/Gold), ubicaciones y modos de escritura.*
 
 ---
 
@@ -161,11 +149,8 @@ Con un solo comando (`terraform apply`), la nube crea de forma idéntica y segur
 - Los Permisos y Roles (IAM).
 - El Workspace de Databricks y Unity Catalog.
 
-<p align="center">
-  <img src="assets/terraform_execution.png" alt="Ejecución de Terraform" width="90%">
-  <br>
-  <em>Despliegue de los recursos ejecutando `terraform apply` desde la terminal integrada, mostrando la organización modular de los archivos `.tf`.</em>
-</p>
+![Ejecución de Terraform](assets/terraform_execution.png)
+*Despliegue de los recursos ejecutando `terraform apply` desde la terminal integrada, mostrando la organización modular de los archivos `.tf`.*
 
 > **Nota Técnica de Optimización:** En iteraciones previas se probaron tecnologías antiguas (AWS Redshift, AWS ECS Fargate, ECR Docker). Al migrar a Databricks, se depuraron y destruyeron todos esos recursos obsoletos, demostrando un enfoque **FinOps** (optimización de costos) para no dejar infraestructura fantasma consumiendo presupuesto.
 
@@ -187,43 +172,35 @@ La mayor ventaja de esta arquitectura es su **Modelo Dual**. Puedes probar tu c�
    ```
    **¿Qué hace la bandera `--onpremise`?** Intercepta la configuración, simula la existencia de Unity Catalog dentro de tu computadora creando la base de datos `spark-warehouse`, y lee los CSV locales en la carpeta `bronze/` en lugar de ir a buscarlos al S3 de AWS.
 
-<p align="center">
-  <img src="assets/local_execution.png" alt="Ejecución Local de PySpark" width="90%">
-  <br>
-  <em>Ejecución exitosa del pipeline de manera local mediante el flag --onpremise, simulando las escrituras en una base de datos local embebida.</em>
-</p>
+![Ejecución Local de PySpark](assets/local_execution.png)
+*Ejecución exitosa del pipeline de manera local mediante el flag --onpremise, simulando las escrituras en una base de datos local embebida.*
 
 ### B) Ejecución en Databricks (Cloud Producción)
 
 1. En tu espacio de trabajo (Workspace) de Databricks, usa la función **Databricks Repos (Git Folders)** para conectar este repositorio de GitHub.
 2. Databricks clonará el proyecto idéntico a la nube.
 
-<p align="center">
-  <img src="assets/databricks_workspace.png" alt="Workspace Sincronizado con Git" width="90%">
-  <br>
-  <em>Workspace de Databricks sincronizado con el repositorio de GitHub de manera nativa para CI/CD continuo.</em>
-</p>
+![Workspace Sincronizado con Git](assets/databricks_workspace.png)
+*Workspace de Databricks sincronizado con el repositorio de GitHub de manera nativa para CI/CD continuo.*
 
 3. Dirígete a la pestaña **Workflows -> Create Job**.
 4. Crea una tarea de tipo **Python Script** apuntando al archivo `main.py` de tu repositorio recién sincronizado.
 5. En la configuración del Clúster del Job, asegúrate de instalar las librerías `omegaconf` y `ipynb`.
+
+![Configuración de Workflows (Jobs)](assets/databricks_job_setup.png)
+*Configuración de la tarea en Databricks Workflows apuntando al script principal y definiendo los parámetros de cómputo serverless.*
+
 6. Presiona **Run Now**. Al no enviar la bandera `--onpremise`, el script utilizará los recursos empresariales: leerá los terabytes de datos en AWS S3 y guardará las tablas en Unity Catalog.
 
-<p align="center">
-  <img src="assets/databricks_job_run.png" alt="Ejecución de Workflows" width="90%">
-  <br>
-  <em>Ejecución 100% exitosa del pipeline completo orquestado mediante un Job Cluster automatizado.</em>
-</p>
+![Ejecución de Workflows](assets/databricks_job_run.png)
+*Ejecución 100% exitosa del pipeline completo orquestado mediante un Job Cluster automatizado.*
 
 ### 📊 Consumo de Datos (Databricks SQL)
 
 Una vez completado el pipeline, la arquitectura permite de manera instantánea realizar analítica de datos utilizando Databricks SQL Editor o conectándolo con herramientas de BI (PowerBI, Tableau, etc.).
 
-<p align="center">
-  <img src="assets/databricks_sql.png" alt="Databricks SQL Editor" width="90%">
-  <br>
-  <em>Consulta de las tablas de negocio finales de la capa Gold utilizando Databricks SQL Engine.</em>
-</p>
+![Databricks SQL Editor](assets/databricks_sql.png)
+*Consulta de las tablas de negocio finales de la capa Gold utilizando Databricks SQL Engine.*
 
 ---
 <div align="center">
