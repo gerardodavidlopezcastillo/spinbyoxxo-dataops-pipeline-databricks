@@ -20,3 +20,5 @@ data/processed/
 spark-warehouse/
 derby.log
 metastore_db/
+terraform.tfvars
+*.tfvars
