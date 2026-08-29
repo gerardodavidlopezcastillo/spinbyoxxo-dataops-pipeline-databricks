@@ -9,6 +9,7 @@
 resource "databricks_catalog" "spinbyoxxo" {
   provider       = databricks.workspace
   name           = "spinbyoxxo"
+  force_destroy  = true
   comment        = "Catálogo principal para el Data Lake"
   properties = {
     env = var.environment
@@ -20,6 +21,7 @@ resource "databricks_schema" "bronze" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "bronze"
+  force_destroy = true
   comment      = "Datos crudos (Raw Data)"
   storage_root = databricks_external_location.bronze.url
   properties = {
@@ -32,6 +34,7 @@ resource "databricks_schema" "silver" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "silver"
+  force_destroy = true
   comment      = "Datos limpios y estandarizados (Processed Data)"
   storage_root = databricks_external_location.silver.url
   properties = {
@@ -44,6 +47,7 @@ resource "databricks_schema" "gold" {
   provider     = databricks.workspace
   catalog_name = databricks_catalog.spinbyoxxo.id
   name         = "gold"
+  force_destroy = true
   comment      = "Modelado dimensional para analítica y reportes"
   storage_root = databricks_external_location.gold.url
   properties = {
