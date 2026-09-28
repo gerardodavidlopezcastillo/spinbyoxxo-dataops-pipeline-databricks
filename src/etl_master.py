@@ -60,3 +60,4 @@ class LakehouseMaster:
         df_raw = self.extract()
         df_transformed = self.transform(df_raw)
         self.load(df_transformed)
+

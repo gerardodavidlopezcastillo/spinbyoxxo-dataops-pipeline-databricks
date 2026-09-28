@@ -22,3 +22,4 @@ output "databricks_workspace_url" {
   description = "URL del Workspace de Databricks"
   value       = databricks_mws_workspaces.this.workspace_url
 }
+

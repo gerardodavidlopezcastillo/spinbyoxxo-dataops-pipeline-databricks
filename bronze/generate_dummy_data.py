@@ -77,3 +77,4 @@ df_orders.to_csv('raw_postgres_orders.csv', index=False)
 df_order_items.to_csv('raw_postgres_order_items.csv', index=False)
 
 print("¡Archivos generados exitosamente! (raw_postgres_users.csv, raw_postgres_orders.csv, raw_postgres_order_items.csv)")
+

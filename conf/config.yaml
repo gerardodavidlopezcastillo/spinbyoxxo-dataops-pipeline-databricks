@@ -58,3 +58,4 @@ tables:
       write_mode: "overwrite"
       module_path: "gold.fct_sales.FctSales"
       owner: "gerardodavidlopezcastillo"
+

@@ -77,3 +77,4 @@ variable "gold_bucket" {
   description = "S3 bucket for gold data"
   default     = "spinbyoxxo-datalake-gold"
 }
+

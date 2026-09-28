@@ -42,3 +42,4 @@ resource "databricks_mws_credentials" "this" {
   credentials_name = "${var.prefix}-creds"
   depends_on       = [time_sleep.wait_for_iam]
 }
+

@@ -43,3 +43,4 @@ resource "aws_s3_bucket" "gold_data" {
     Name        = "${var.prefix}-gold-data"
   }
 }
+

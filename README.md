@@ -270,3 +270,4 @@ Una vez completado el pipeline, la arquitectura permite de manera instantánea r
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
   </a>
 </div>
+

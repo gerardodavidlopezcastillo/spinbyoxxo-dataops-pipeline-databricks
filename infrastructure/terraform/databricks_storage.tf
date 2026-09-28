@@ -157,3 +157,4 @@ resource "databricks_grants" "gold_external_location" {
     privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
   }
 }
+

@@ -42,3 +42,4 @@ resource "databricks_grants" "spinbyoxxo_catalog" {
     privileges = ["ALL_PRIVILEGES"]
   }
 }
+

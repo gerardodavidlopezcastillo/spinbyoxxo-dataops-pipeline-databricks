@@ -87,3 +87,4 @@ resource "databricks_mws_permission_assignment" "me_as_admin" {
   principal_id = data.databricks_user.me.id
   permissions  = ["ADMIN"]
 }
+
