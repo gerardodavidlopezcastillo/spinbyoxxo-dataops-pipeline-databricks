@@ -90,3 +90,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     run_pipeline(is_onpremise=args.onpremise)
+
