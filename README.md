@@ -4,7 +4,7 @@
 
 ---
 
-## 📖 1. Contexto del Negocio (Para perfiles no técnicos)
+## 📖 1. Contexto del Negocio
 
 **El Problema Original:**
 La empresa "E-Cart" operaba todo su comercio electrónico sobre una base de datos PostgreSQL. Con el rápido crecimiento de la empresa, los equipos de negocio (Finanzas y Marketing) comenzaron a ejecutar reportes pesados directamente sobre esta base de datos transaccional. Esto causaba caídas del sistema, enlentecía la aplicación para los usuarios finales y no permitía hacer análisis predictivos.
@@ -13,9 +13,9 @@ La empresa "E-Cart" operaba todo su comercio electrónico sobre una base de dato
 Diseñar un **Data Lakehouse**. Extraer la información desde PostgreSQL sin afectar su rendimiento y llevarla a la nube (AWS S3). Una vez allí, utilizar el poder de procesamiento distribuido de **Databricks (Apache Spark)** para limpiar, transformar y organizar los datos, preparándolos para ser consumidos por tableros estadísticos (Power BI, Tableau) de manera súper rápida e independiente de la aplicación principal.
 
 
-### 🚀 Extra Mile: De un concepto teórico a una plataforma funcional
-El reto pedía *diseñar e implementar conceptualmente* la solución. Sin embargo, para demostrar habilidades de ingeniería reales, **este repositorio contiene un pipeline 100% funcional**. 
-Como no se proveyeron datos de prueba, se desarrolló un simulador avanzado en Python (`bronze/generate_dummy_data.py`) utilizando la librería `Faker` para generar decenas de miles de registros sintéticos (con nombres latinos, correos y transacciones coherentes), permitiendo probar la ingesta y transformación en un entorno de Big Data realista.
+### 🚀 De un concepto teórico a una plataforma funcional
+**este repositorio contiene un pipeline 100% funcional**. 
+Se desarrolló un simulador avanzado en Python (`bronze/generate_dummy_data.py`) utilizando la librería `Faker` para generar decenas de miles de registros sintéticos (con nombres latinos, correos y transacciones coherentes), permitiendo probar la ingesta y transformación en un entorno de Big Data realista.
 
 ![Simulador de Datos Sintéticos](assets/dummy_data.png)
 *Script generador de datos transaccionales, creando perfiles de usuarios realistas para alimentar la capa Bronze y probar el rendimiento del pipeline.*
@@ -250,60 +250,6 @@ Una vez completado el pipeline, la arquitectura permite de manera instantánea r
 
 ![Databricks SQL Editor](assets/databricks_sql.png)
 *Consulta de las tablas de negocio finales de la capa Gold utilizando Databricks SQL Engine.*
-
-
----
-
-## 🎯 7. Defensa de Decisiones Técnicas (Respuestas al Caso de Negocio)
-
-Como parte de la sustentación técnica de esta arquitectura, a continuación se detallan las respuestas a los requerimientos de negocio planteados:
-
-### 1. Ingesta: ¿Batch o Streaming (CDC)? ¿Cómo mitigar el impacto en Producción?
-**Decisión:** Se implementa un enfoque de **Change Data Capture (CDC)** mediante **AWS DMS (Database Migration Service)**. 
-**Justificación:** Al ser una base de datos OLTP (PostgreSQL) crítica para la app móvil, realizar consultas masivas tipo `SELECT *` para extracciones Batch en horas pico degradaría el servicio. AWS DMS lee directamente de los *Write-Ahead Logs (WAL)* de PostgreSQL, extrayendo los cambios (Inserts/Updates/Deletes) en tiempo real con un impacto casi nulo en el rendimiento de la base de datos origen. Estos eventos aterrizan como archivos crudos inmutables en la capa **Bronze** (S3).
-
-```mermaid
-sequenceDiagram
-    participant PG as PostgreSQL (Prod)
-    participant WAL as Write-Ahead Logs
-    participant DMS as AWS DMS
-    participant S3 as S3 (Bronze)
-    
-    PG->>WAL: 1. Transacción (Insert/Update)
-    WAL->>DMS: 2. Captura de cambio en tiempo real (CDC)
-    DMS->>S3: 3. Escritura Inmutable (JSON/CSV)
-```
-
-
-### 2. ¿Cómo asegurar que los datos sensibles (PII) estén protegidos?
-**Decisión:** Enmascaramiento criptográfico y aislamiento de permisos.
-**Justificación:** Durante el salto de la capa Bronze a la capa Silver (ver `src/analytics_helpers.py`), los campos como el `email` de los usuarios pasan por una función Hash unidireccional (**SHA-256**). De esta forma, el dato original se destruye para los analistas, pero permite seguir trazando la identidad del usuario (ej. para saber cuántas compras hizo). Adicionalmente, el acceso a la capa Bronze queda estrictamente prohibido para analistas a través de **Unity Catalog**, permitiendo solo a roles de Ingeniería ver el dato crudo.
-![Enmascaramiento PII](assets/pii_code.png)
-*Fragmento de código en PySpark mostrando la función SHA-256 aplicada a columnas dinámicas configuradas.*
-
-### 3. Estrategia de particionamiento para tablas de hechos (Fact Tables)
-**Decisión:** Particionamiento físico por `part_year` y `part_month`.
-**Justificación:** El comercio electrónico genera un volumen masivo de transacciones. En la capa Gold, la tabla `fct_sales` está particionada por año y mes. Cuando un analista financiero ejecute reportes como *"Ventas totales en el último trimestre"*, el motor de Databricks SQL ignorará el 90% de los datos históricos irrelevantes (Partition Pruning), leyendo solo los meses necesarios. Esto ahorra tiempos de cómputo y costos drásticamente.
-![Particionamiento FCT](assets/partitioning.png)
-*Descripción de la tabla fct_sales en Unity Catalog confirmando que los datos están particionados por año y mes.*
-
-### 4. Cambios de estado (ej. Pending a Completed): ¿Cómo se refleja en la arquitectura?
-**Decisión:** Operaciones `UPSERT` gracias a las propiedades ACID de Delta Lake.
-**Justificación:** En un Data Lake tradicional (solo Parquet), actualizar un registro es extremadamente ineficiente (requiere reescribir todo el archivo). Como usamos **Delta Lake** en las capas Silver y Gold, podemos utilizar la operación `MERGE INTO`. Cuando el CDC captura que una orden cambió a `Completed`, Spark ejecuta un *Upsert* sobre la tabla Delta: si el ID de la orden existe, actualiza el estado; si no existe, la inserta. Así, los dashboards siempre reflejan el estado real sin duplicar registros.
-
-### 5. ¿Qué framework de CI/CD implementarías y cómo manejarías IaC?
-**Decisión (Diseño Teórico):** **GitHub Actions** orquestando **Terraform** y Databricks CLI.
-**Justificación:**
-Dado que este proyecto ya cuenta con el código de IaC y Pipelines, la evolución natural empresarial (no implementada en el código actual, pero diseñada) se divide en dos fases:
-
-**Integración Continua (CI):**
-- Al hacer un Pull Request hacia `main`, un Workflow de GitHub Actions ejecutará un linter (ej. `flake8`) y tests unitarios locales (ej. usando `pytest` llamando a `main.py --onpremise`).
-- Se ejecutará `terraform plan` para evaluar qué infraestructura va a cambiar en AWS/Databricks, entregando el plan como un comentario en el PR para revisión manual.
-
-**Despliegue Continuo (CD):**
-- Al hacer merge a la rama `main`, un job ejecuta `terraform apply -auto-approve` creando o modificando recursos (S3, IAM, Unity Catalog).
-- Posteriormente, a través de la API de Databricks, se dispara una actualización al *Git Repo* del Workspace para sincronizar el código PySpark.
-- Finalmente, se despliegan/actualizan los *Databricks Workflows (Jobs)* usando Databricks Asset Bundles (DABs) o Terraform, asegurando que la infraestructura y el código estén siempre alineados.
 
 ---
 <div align="center">

@@ -78,7 +78,7 @@ provider "databricks" {
 
 data "databricks_user" "me" {
   provider  = databricks.mws
-  user_name = "gdlopezcastillo@gmail.com"
+  user_name = "david.657@hotmail.es"
 }
 
 resource "databricks_mws_permission_assignment" "me_as_admin" {

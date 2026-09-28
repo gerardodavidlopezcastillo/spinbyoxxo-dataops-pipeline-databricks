@@ -133,7 +133,7 @@ resource "databricks_grants" "bronze_external_location" {
   external_location = databricks_external_location.bronze.id
 
   grant {
-    principal  = "gdlopezcastillo@gmail.com"
+    principal  = "david.657@hotmail.es"
     privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
   }
 }
@@ -143,7 +143,7 @@ resource "databricks_grants" "silver_external_location" {
   external_location = databricks_external_location.silver.id
 
   grant {
-    principal  = "gdlopezcastillo@gmail.com"
+    principal  = "david.657@hotmail.es"
     privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
   }
 }
@@ -153,7 +153,7 @@ resource "databricks_grants" "gold_external_location" {
   external_location = databricks_external_location.gold.id
 
   grant {
-    principal  = "gdlopezcastillo@gmail.com"
+    principal  = "david.657@hotmail.es"
     privileges = ["READ_FILES", "WRITE_FILES", "CREATE_EXTERNAL_TABLE"]
   }
 }

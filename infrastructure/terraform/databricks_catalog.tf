@@ -1,67 +1,44 @@
-# ===============================================================================
-# Archivo: databricks_catalog.tf
-# Descripción: Estructura lógica del Unity Catalog. Crea el catálogo raíz y
-# mapea los esquemas lógicos (bronze, silver, gold) hacia sus ubicaciones
-# físicas en AWS S3.
-# ===============================================================================
-
-# Crea el catálogo principal que agrupará todos nuestros esquemas
 resource "databricks_catalog" "spinbyoxxo" {
   provider       = databricks.workspace
   name           = "spinbyoxxo"
   force_destroy  = true
   comment        = "Catálogo principal para el Data Lake"
-  properties = {
-    env = var.environment
-  }
+  storage_root   = "s3://${aws_s3_bucket.raw_data.id}/catalog"
+  depends_on     = [databricks_external_location.bronze]
 }
 
-# Define el esquema Bronze y lo vincula estrictamente a su External Location en S3
 resource "databricks_schema" "bronze" {
   provider     = databricks.workspace
-  catalog_name = databricks_catalog.spinbyoxxo.id
+  catalog_name = databricks_catalog.spinbyoxxo.name
   name         = "bronze"
   force_destroy = true
-  comment      = "Datos crudos (Raw Data)"
-  storage_root = databricks_external_location.bronze.url
-  properties = {
-    layer = "bronze"
-  }
+  storage_root = "s3://${aws_s3_bucket.raw_data.id}/"
+  properties = { layer = "bronze" }
 }
 
-# Define el esquema Silver para las tablas Delta procesadas y limpias
 resource "databricks_schema" "silver" {
   provider     = databricks.workspace
-  catalog_name = databricks_catalog.spinbyoxxo.id
+  catalog_name = databricks_catalog.spinbyoxxo.name
   name         = "silver"
   force_destroy = true
-  comment      = "Datos limpios y estandarizados (Processed Data)"
-  storage_root = databricks_external_location.silver.url
-  properties = {
-    layer = "silver"
-  }
+  storage_root = "s3://${aws_s3_bucket.processed_data.id}/"
+  properties = { layer = "silver" }
 }
 
-# Define el esquema Gold para las tablas analíticas finales
 resource "databricks_schema" "gold" {
   provider     = databricks.workspace
-  catalog_name = databricks_catalog.spinbyoxxo.id
+  catalog_name = databricks_catalog.spinbyoxxo.name
   name         = "gold"
   force_destroy = true
-  comment      = "Modelado dimensional para analítica y reportes"
-  storage_root = databricks_external_location.gold.url
-  properties = {
-    layer = "gold"
-  }
+  storage_root = "s3://${aws_s3_bucket.gold_data.id}/"
+  properties = { layer = "gold" }
 }
 
-# Otorga permisos de administración total al usuario propietario
 resource "databricks_grants" "spinbyoxxo_catalog" {
   provider = databricks.workspace
   catalog  = databricks_catalog.spinbyoxxo.name
-
   grant {
-    principal  = "gdlopezcastillo@gmail.com"
+    principal  = "david.657@hotmail.es"
     privileges = ["ALL_PRIVILEGES"]
   }
 }
